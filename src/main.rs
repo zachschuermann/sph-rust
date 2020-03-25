@@ -1,12 +1,17 @@
-fn main() {
-    println!("Hello, world!");
+//! The simplest possible example that does something.
+//! changing to do sph simulation
 
-    let el = glutin::event_loop::EventLoop::new();
-    let wb = glutin::window::WindowBuilder::new()
-        .with_title("Hello world!")
-        .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
-    let windowed_context = glutin::ContextBuilder::new()
-        .build_windowed(wb, &el)
-        .unwrap();
-    let windowed_context = unsafe { windowed_context.make_current().unwrap() };
+use ggez;
+use ggez::event;
+//use ggez::graphics;
+//use ggez::nalgebra as na;
+use ggez::GameResult;//{Context, GameResult};
+
+use sph;
+
+pub fn main() -> GameResult {
+    let cb = ggez::ContextBuilder::new("super_simple", "ggez");
+    let (ctx, event_loop) = &mut cb.build()?;
+    let state = &mut sph::State::new()?;
+    event::run(ctx, event_loop, state)
 }
