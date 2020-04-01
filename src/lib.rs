@@ -89,17 +89,19 @@ impl State {
     }
     fn density_pressure(&mut self) {
         let particles_clone = self.particles.clone();
-        for p_i in &mut self.particles {
-            p_i.r = 0.;
+        //for p_i in &mut self.particles {
+        self.particles = self.particles.par_iter().map(|p_i| {
+            let mut r = 0.;
             for p_j in &particles_clone {
                 let rij: Vector2<f32> = p_j.x - p_i.x;
                 let r2 = rij.norm_squared();
                 if r2 < HSQ {
-                    p_i.r += MASS * (*POLY6) * (HSQ - r2).powf(3.);
+                    r += MASS * (*POLY6) * (HSQ - r2).powf(3.);
                 }
             }
-            p_i.p = GAS_CONST * (p_i.r - REST_DENS);
-        }
+            let p = GAS_CONST * (r - REST_DENS);
+            Particle {x: p_i.x, v: p_i.v, f: p_i.f, r, p}
+        }).collect();
     } 
     fn forces(&mut self) {
         let particles_clone = self.particles.clone();
