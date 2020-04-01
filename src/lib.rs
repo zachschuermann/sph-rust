@@ -15,7 +15,7 @@ const RADIUS: f32 = H/2.;
 
 const REST_DENS: f32 = 1000.; // rest density
 const GAS_CONST: f32 = 2000.; // const for equation of state
-const H: f32 = 10.; // kernel radius
+const H: f32 = 16.; // kernel radius
 const HSQ: f32 = H * H; // radius^2 for optimization
 const MASS: f32 = 65.; // assume all particles have the same mass
 const VISC: f32 = 250.; // viscosity constant
@@ -30,7 +30,7 @@ const BOUND_DAMPING: f32 = -0.5;
 //const BLOCK_PARTICLES: usize = 250;
 
 // re projection parameters
-const WINDOW_WIDTH: usize = 400;
+const WINDOW_WIDTH: usize = 500;
 const WINDOW_HEIGHT: usize = 600;
 const VIEW_WIDTH: f32 = 1.5 * WINDOW_WIDTH as f32;
 const VIEW_HEIGHT: f32 = 1.5 * WINDOW_HEIGHT as f32;
@@ -73,9 +73,9 @@ impl State {
     pub fn new() -> GameResult<State> {
         let mut particles = vec![];
         // x iter
-        for i in 10..25 {
+        for i in 10..50 {
             // y iter
-            for j in 10..30 {
+            for j in 10..40 {
                 let jitter = random::<f32>();
                 particles.push(Particle::new(i as f32 * H + jitter, j as f32 * H));
             }
@@ -83,16 +83,16 @@ impl State {
         let s = State { particles };
         Ok(s)
     }
-    fn update(&mut self) {
+    pub fn update(&mut self) {
         self.density_pressure();
         self.forces();
         self.integrate();
     }
     fn density_pressure(&mut self) {
         let particles_clone = self.particles.clone();
-        for p_i in self.particles.iter_mut() {
+        for p_i in &mut self.particles {
             p_i.r = 0.;
-            for p_j in particles_clone.iter() {
+            for p_j in &particles_clone {
                 let rij: Vector2<f32> = p_j.x - p_i.x;
                 let r2 = rij.norm_squared();
                 if r2 < HSQ {
@@ -101,13 +101,13 @@ impl State {
             }
             p_i.p = GAS_CONST * (p_i.r - REST_DENS);
         }
-    }
+    } 
     fn forces(&mut self) {
         let particles_clone = self.particles.clone();
-        for p_i in self.particles.iter_mut() {
+        for p_i in &mut self.particles {
             let mut fpress = Vector2::new(0., 0.);
             let mut fvisc = Vector2::new(0., 0.);
-            for p_j in particles_clone.iter() {
+            for p_j in &particles_clone {
                 if p_i == p_j {
                     continue;
                 }
