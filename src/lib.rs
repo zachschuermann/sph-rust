@@ -8,8 +8,7 @@ use ggez::{Context, GameResult};
 use lazy_static::lazy_static;
 use rand::random;
 
-// add parallelism later
-//use rayon::prelude::*;
+use rayon::prelude::*;
 
 const RADIUS: f32 = H/2.;
 
@@ -104,7 +103,7 @@ impl State {
     } 
     fn forces(&mut self) {
         let particles_clone = self.particles.clone();
-        for p_i in &mut self.particles {
+        self.particles = self.particles.par_iter().map(|p_i| {
             let mut fpress = Vector2::new(0., 0.);
             let mut fvisc = Vector2::new(0., 0.);
             for p_j in &particles_clone {
@@ -123,8 +122,13 @@ impl State {
                 }
             }
             let fgrav = (*G) * p_i.r;
-            p_i.f = fpress + fvisc + fgrav;
-        }
+            //p_i.f = fpress + fvisc + fgrav;
+            let x = p_i.x;
+            let v = p_i.v;
+            let r = p_i.r;
+            let p = p_i.p;
+            Particle {x, v, r, p, f: fpress + fvisc + fgrav}
+        }).collect();
     }
     fn integrate(&mut self) {
         for p in self.particles.iter_mut() {
