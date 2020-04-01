@@ -133,29 +133,31 @@ impl State {
         }).collect();
     }
     fn integrate(&mut self) {
-        for p in self.particles.iter_mut() {
+        //for p in self.particles.iter_mut() {
+        self.particles = self.particles.par_iter().map(|p| {
             // forward Euler integration
-            p.v += DT * p.f / p.r;
-            p.x += DT * p.v;
+            let mut v = p.v + DT * p.f / p.r;
+            let mut x = p.x + DT * v;
 
             // enforce boundary conditions
-            if p.x[0] - EPS < 0. {
-                p.v[0] *= BOUND_DAMPING;
-                p.x[0] = EPS;
+            if x[0] - EPS < 0. {
+                v[0] *= BOUND_DAMPING;
+                x[0] = EPS;
             }
-            if p.x[0] + EPS > VIEW_WIDTH {
-                p.v[0] *= BOUND_DAMPING;
-                p.x[0] = VIEW_WIDTH - EPS;
+            if x[0] + EPS > VIEW_WIDTH {
+                v[0] *= BOUND_DAMPING;
+                x[0] = VIEW_WIDTH - EPS;
             }
-            if p.x[1] - EPS < 0. {
-                p.v[1] *= BOUND_DAMPING;
-                p.x[1] = EPS;
+            if x[1] - EPS < 0. {
+                v[1] *= BOUND_DAMPING;
+                x[1] = EPS;
             }
-            if p.x[1] + EPS > VIEW_HEIGHT {
-                p.v[1] *= BOUND_DAMPING;
-                p.x[1] = VIEW_HEIGHT - EPS;
+            if x[1] + EPS > VIEW_HEIGHT {
+                v[1] *= BOUND_DAMPING;
+                x[1] = VIEW_HEIGHT - EPS;
             }
-        }
+            Particle {x, v, f: p.f, r: p.r, p: p.p }
+        }).collect();
     }
 }
 
