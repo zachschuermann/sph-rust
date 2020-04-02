@@ -17,7 +17,7 @@ use sph;
 fn main() {
     println!("Running simulation...");
     let state = &mut sph::State::new().unwrap();
-    for _ in 0..1000 {
+    for _ in 0..10000 {
         state.update();
     }
 }
