@@ -11,7 +11,7 @@ use rand::random;
 // add parallelism later
 //use rayon::prelude::*;
 
-const RADIUS: f32 = H/2.;
+const RADIUS: f32 = H / 2.;
 
 const REST_DENS: f32 = 1000.; // rest density
 const GAS_CONST: f32 = 2000.; // const for equation of state
@@ -70,12 +70,13 @@ impl Particle {
 }
 
 impl State {
-    pub fn new() -> GameResult<State> {
+    // TODO use N
+    pub fn new(n: u32) -> GameResult<State> {
         let mut particles = vec![];
         // x iter
         for i in 10..50 {
             // y iter
-            for j in 10..40 {
+            for j in 10..35 {
                 let jitter = random::<f32>();
                 particles.push(Particle::new(i as f32 * H + jitter, j as f32 * H));
             }
@@ -83,11 +84,13 @@ impl State {
         let s = State { particles };
         Ok(s)
     }
+
     pub fn update(&mut self) {
         self.density_pressure();
         self.forces();
         self.integrate();
     }
+
     fn density_pressure(&mut self) {
         let particles_clone = self.particles.clone();
         for p_i in &mut self.particles {
@@ -101,8 +104,9 @@ impl State {
             }
             p_i.p = GAS_CONST * (p_i.r - REST_DENS);
         }
-    } 
-    fn forces(&mut self) {
+    }
+
+    fn forces2(&mut self) {
         let particles_clone = self.particles.clone();
         for p_i in &mut self.particles {
             let mut fpress = Vector2::new(0., 0.);
@@ -126,8 +130,36 @@ impl State {
             p_i.f = fpress + fvisc + fgrav;
         }
     }
+
+    fn forces(&mut self) {
+        let l = self.particles.len();
+        for i in 0..l {
+            let mut fpress = Vector2::new(0., 0.);
+            let mut fvisc = Vector2::new(0., 0.);
+            for j in 0..l {
+                if i == j {
+                    continue;
+                }
+                let p_i = &self.particles[i];
+                let p_j = &self.particles[j];
+                let rij = p_j.x - p_i.x;
+                let r = rij.norm();
+                if r < H {
+                    // compute pressure force contribution
+                    fpress += -rij.normalize() * MASS * (p_i.p + p_j.p) / (2. * p_j.r)
+                        * (*SPIKY_GRAD)
+                        * (H - r).powf(2.);
+                    // compute viscosity force contribution
+                    fvisc += VISC * MASS * (p_j.v - p_i.v) / p_j.r * (*VISC_LAP) * (H - r);
+                }
+            }
+            let fgrav = (*G) * self.particles[i].r;
+            self.particles[i].f = fpress + fvisc + fgrav;
+        }
+    }
+
     fn integrate(&mut self) {
-        for p in self.particles.iter_mut() {
+        for p in &mut self.particles {
             // forward Euler integration
             p.v += DT * p.f / p.r;
             p.x += DT * p.v;
